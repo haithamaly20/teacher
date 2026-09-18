@@ -1345,7 +1345,14 @@ function showSection(name) {
   document.getElementById('nav-'+name).classList.add('active');
   if (name === 'dashboard') loadDashboard();
   if (name === 'institutes') loadInstitutes();
-  if (name === 'teachers') populateInstSelect('teacher-inst-filter');
+  if (name === 'teachers') {
+    populateInstSelect('teacher-inst-filter');
+    // إذا كان معهد مختاراً بالفعل، حمّل معلميه فوراً
+    setTimeout(() => {
+      const sel = document.getElementById('teacher-inst-filter');
+      if (sel && sel.value) loadTeachersForInstitute(sel.value);
+    }, 50);
+  }
   if (name === 'classes') { populateInstSelect('class-inst-select'); populateBulkCreateRows(); }
   if (name === 'convoys') { populateInstSelect('convoy-inst-filter'); populateGradeFilter('convoy-grade-filter'); loadConvoyData(); }
   if (name === 'visits') { populateInstSelect('visit-inst'); populateInstSelect('visit-filter-inst'); loadVisitsTable(); }
@@ -1536,11 +1543,29 @@ async function loadTeachersForInstitute(instId) {
   if (!instId) { document.getElementById('teachers-tbody').innerHTML = '<tr><td colspan="11" class="empty-state">اختر معهداً</td></tr>'; return; }
   const cKey = 'teachers_'+instId;
   let data = cacheGet(cKey);
+
+  // إذا لم تكن البيانات في الذاكرة المؤقتة الخاصة بهذا المعهد،
+  // ابحث في teachers_all أولاً قبل إطلاق طلب شبكي جديد
   if (!data) {
-    try { data = await callGAS('getTeachers', { institute_id: instId }); cacheSet(cKey, data); }
+    const allT = cacheGet('teachers_all');
+    if (allT) {
+      data = allT.filter(t => t.institute_id === instId);
+      cacheSet(cKey, data, CACHE_TTL.teachers);
+    }
+  }
+
+  if (!data) {
+    try {
+      data = await callGAS('getTeachers', { institute_id: instId });
+      cacheSet(cKey, data);
+    }
     catch(e) { showAlert('فشل تحميل المعلمين: ' + e.message, 'danger'); return; }
   }
   allTeachersData = data || [];
+  if (allTeachersData.length === 0) {
+    document.getElementById('teachers-tbody').innerHTML = '<tr><td colspan="11" class="empty-state">لا يوجد معلمون في هذا المعهد</td></tr>';
+    return;
+  }
   applyTeacherFilters();
 }
 
@@ -1742,15 +1767,31 @@ async function loadClassesForInstitute(instId) {
   if (!instId) { document.getElementById('classes-tbody').innerHTML = '<tr><td colspan="7" class="empty-state">اختر معهداً</td></tr>'; return; }
   const cKey = 'classes_'+instId;
   let data = cacheGet(cKey);
+
+  // ابحث في classes_all أولاً قبل طلب شبكي
+  if (!data) {
+    const allC = cacheGet('classes_all');
+    if (allC) {
+      data = allC.filter(c => c.institute_id === instId);
+      cacheSet(cKey, data, CACHE_TTL.classes);
+    }
+  }
   if (!data) {
     try { data = await callGAS('getClasses', { institute_id: instId }); cacheSet(cKey, data); }
     catch(e) { showAlert('فشل تحميل الفصول: ' + e.message, 'danger'); return; }
   }
   allClassesData = data || [];
 
-  // also load teachers for this institute
+  // تحميل المعلمين من الذاكرة المؤقتة أولاً
   const tKey = 'teachers_'+instId;
   let teachers = cacheGet(tKey);
+  if (!teachers) {
+    const allT = cacheGet('teachers_all');
+    if (allT) {
+      teachers = allT.filter(t => t.institute_id === instId);
+      cacheSet(tKey, teachers, CACHE_TTL.teachers);
+    }
+  }
   if (!teachers) {
     try { teachers = await callGAS('getTeachers', { institute_id: instId }); cacheSet(tKey, teachers); }
     catch(e){ teachers = []; }
