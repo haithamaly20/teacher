@@ -1146,42 +1146,173 @@ let CACHE = {};  // sessionStorage-backed cache
 let cadreGrades = ["معلم مساعد","معلم","معلم أول","معلم أول (أ)","معلم خبير","كبير معلمين"];
 
 // ═══════════════════════════════════════════════════════
-//  SESSION CACHE
+//  PERFORMANCE INSTRUMENTATION
 // ═══════════════════════════════════════════════════════
-function cacheSet(k, v) { try { sessionStorage.setItem('cache_'+k, JSON.stringify({ts: Date.now(), v})); } catch(e){} }
-function cacheGet(k, maxAge=30000) {
+const DEBUG_SYNC = false;
+function dbg(...args) { if (DEBUG_SYNC) console.log('[SYNC]', ...args); }
+
+// ═══════════════════════════════════════════════════════
+//  CACHE TTL CONSTANTS (بالميلي ثانية)
+// ═══════════════════════════════════════════════════════
+const CACHE_TTL = {
+  institutes: 10 * 60 * 1000,  // 10 دقائق
+  classes:     5 * 60 * 1000,  //  5 دقائق
+  teachers:    5 * 60 * 1000,  //  5 دقائق
+  convoy:      5 * 60 * 1000,  //  5 دقائق
+  visits:      2 * 60 * 1000,  //  2 دقيقة
+  settings:   30 * 60 * 1000,  // 30 دقيقة
+  stats:       2 * 60 * 1000   //  2 دقيقة
+};
+
+// ═══════════════════════════════════════════════════════
+//  SESSION CACHE — يدعم TTL فعلياً
+// ═══════════════════════════════════════════════════════
+function cacheSet(k, v, ttl) {
+  // إذا لم يُحدَّد ttl، نختار القيمة المناسبة تلقائياً
+  if (ttl === undefined) {
+    if (k.startsWith('institutes'))   ttl = CACHE_TTL.institutes;
+    else if (k.startsWith('classes_')) ttl = CACHE_TTL.classes;
+    else if (k.startsWith('teachers_'))ttl = CACHE_TTL.teachers;
+    else if (k.startsWith('convoy'))   ttl = CACHE_TTL.convoy;
+    else if (k.startsWith('visits'))   ttl = CACHE_TTL.visits;
+    else if (k.startsWith('settings')) ttl = CACHE_TTL.settings;
+    else if (k.startsWith('dash'))     ttl = CACHE_TTL.stats;
+    else                               ttl = CACHE_TTL.stats;
+  }
+  try {
+    const now = Date.now();
+    sessionStorage.setItem('cache_'+k, JSON.stringify({ ts: now, expiresAt: now + ttl, v }));
+    dbg('cacheSet', k, 'ttl=' + ttl + 'ms');
+  } catch(e){}
+}
+
+function cacheGet(k) {
   try {
     const s = sessionStorage.getItem('cache_'+k);
-    if (!s) return null;
+    if (!s) { dbg('cacheMISS', k); return null; }
     const d = JSON.parse(s);
-    if (Date.now() - d.ts > maxAge) return null;
+    if (Date.now() > d.expiresAt) {
+      sessionStorage.removeItem('cache_'+k);
+      dbg('cacheEXPIRED', k);
+      return null;
+    }
+    dbg('cacheHIT', k, 'remainingMs=' + (d.expiresAt - Date.now()));
     return d.v;
   } catch(e){ return null; }
 }
+
 function cacheClear(prefix='') {
   try {
     Object.keys(sessionStorage).filter(k => k.startsWith('cache_'+prefix)).forEach(k => sessionStorage.removeItem(k));
+    dbg('cacheClear prefix=' + (prefix || '(all)'));
   } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════
+//  REQUEST DEDUPLICATION — single-flight per key
+// ═══════════════════════════════════════════════════════
+const _pendingRequests = new Map();
+
+async function _deduplicatedGAS(key, fn) {
+  if (_pendingRequests.has(key)) {
+    dbg('dedup HIT', key);
+    return _pendingRequests.get(key);
+  }
+  dbg('dedup MISS → new request', key);
+  const promise = fn().finally(() => _pendingRequests.delete(key));
+  _pendingRequests.set(key, promise);
+  return promise;
 }
 
 // ═══════════════════════════════════════════════════════
 //  GAS COMMUNICATION
 // ═══════════════════════════════════════════════════════
+// العمليات التي يجب إلغاء تكرار طلباتها (قراءة فقط)
+const READ_ONLY_ACTIONS = new Set([
+  'getInstitutes','getClasses','getTeachers','getAllVisits','getVisits',
+  'getGlobalStats','getGradeAnalysis','getInstituteStats','getSettings',
+  'getTeacherClasses','getBootstrapData'
+]);
+
 async function callGAS(action, payload={}) {
   if (!GAS_URL) throw new Error('لم يتم تعيين رابط Google Apps Script. اذهب إلى الإعدادات.');
 
   const encodedPayload = encodeURIComponent(JSON.stringify(payload));
   const url = `${GAS_URL}?action=${encodeURIComponent(action)}&payload=${encodedPayload}`;
 
-  const res = await fetch(url, {
-    method: 'GET'
-  });
+  const doFetch = async () => {
+    const t0 = Date.now();
+    const res = await fetch(url, { method: 'GET' });
+    if (!res.ok) throw new Error('خطأ في الشبكة: ' + res.status);
+    const data = await res.json();
+    dbg('callGAS', action, (Date.now()-t0)+'ms');
+    if (data && data.error) throw new Error(data.error);
+    return data;
+  };
 
-  if (!res.ok) throw new Error('خطأ في الشبكة: ' + res.status);
+  // إلغاء تكرار الطلبات المتزامنة للعمليات غير المُعدِّلة
+  if (READ_ONLY_ACTIONS.has(action)) {
+    const dedupKey = action + ':' + JSON.stringify(payload);
+    return _deduplicatedGAS(dedupKey, doFetch);
+  }
+  return doFetch();
+}
 
-  const data = await res.json();
-  if (data && data.error) throw new Error(data.error);
+// ═══════════════════════════════════════════════════════
+//  BOOTSTRAP DATA — طلب واحد يجلب كل البيانات الأساسية
+// ═══════════════════════════════════════════════════════
+let _bootstrapDone = false;
 
+async function loadBootstrapData() {
+  // تحقق إن كانت كل البيانات الأساسية محملة من قبل
+  const cachedInsts  = cacheGet('institutes');
+  const cachedCls    = cacheGet('classes_all');
+  const cachedTch    = cacheGet('teachers_all');
+  if (cachedInsts && cachedCls && cachedTch) {
+    dbg('bootstrap: all cached, skip request');
+    return { institutes: cachedInsts, classes: cachedCls, teachers: cachedTch };
+  }
+
+  try {
+    dbg('bootstrap: fetching all data in one request');
+    const data = await callGAS('getBootstrapData');
+    if (data && data.institutes) {
+      cacheSet('institutes',   data.institutes,  CACHE_TTL.institutes);
+      cacheSet('classes_all',  data.classes,     CACHE_TTL.classes);
+      cacheSet('teachers_all', data.teachers,    CACHE_TTL.teachers);
+      if (data.settings && data.settings.cadre_grades) {
+        cadreGrades = data.settings.cadre_grades;
+        cacheSet('settings', data.settings, CACHE_TTL.settings);
+      }
+      // بناء ذاكرة التخزين المؤقت لكل معهد على حدة
+      if (data.institutes && data.classes) {
+        data.institutes.forEach(inst => {
+          const ic = data.classes.filter(c => c.institute_id === inst.id);
+          cacheSet('classes_'+inst.id, ic, CACHE_TTL.classes);
+        });
+      }
+      if (data.institutes && data.teachers) {
+        data.institutes.forEach(inst => {
+          const it = data.teachers.filter(t => t.institute_id === inst.id);
+          cacheSet('teachers_'+inst.id, it, CACHE_TTL.teachers);
+        });
+      }
+      _bootstrapDone = true;
+      dbg('bootstrap: done, cached', data.institutes.length, 'insts,', data.classes.length, 'classes,', data.teachers.length, 'teachers');
+      return data;
+    }
+  } catch(e) {
+    dbg('bootstrap: failed, will use individual requests', e.message);
+  }
+  return null;
+}
+
+// مساعد: احصل على مجموعة بيانات من الذاكرة المؤقتة أو من GAS
+async function getCachedDataset(key, gasAction, gasPayload={}) {
+  const cached = cacheGet(key);
+  if (cached !== null) return cached;
+  const data = await callGAS(gasAction, gasPayload);
+  cacheSet(key, data);
   return data;
 }
 
@@ -1297,8 +1428,15 @@ async function loadInstitutes(useCache=true) {
   let data = useCache ? cacheGet('institutes') : null;
   if (!data) {
     try {
-      data = await callGAS('getInstitutes');
-      cacheSet('institutes', data);
+      // حاول جلب كل البيانات دفعة واحدة إن لم يحدث Bootstrap بعد
+      if (!_bootstrapDone) {
+        const boot = await loadBootstrapData();
+        if (boot && boot.institutes) data = boot.institutes;
+      }
+      if (!data) {
+        data = await callGAS('getInstitutes');
+        cacheSet('institutes', data);
+      }
     } catch(e) { showAlert('فشل تحميل المعاهد: ' + e.message, 'danger'); return; }
   }
   renderInstitutesTable(data);
@@ -1353,7 +1491,7 @@ async function saveInstitute() {
       showAlert('تم إضافة المعهد بنجاح');
     }
     cancelInstEdit();
-    cacheClear('institutes'); cacheClear('dash');
+    cacheClear('institutes'); cacheClear('dash'); cacheClear('convoy_');
     await loadInstitutes(false);
   } catch(e) { showAlert('فشل الحفظ: ' + e.message, 'danger'); }
 }
@@ -1382,7 +1520,10 @@ async function deleteInstitute(id, name) {
   try {
     await callGAS('deleteInstitute', { id });
     showAlert('تم الحذف');
-    cacheClear(); await loadInstitutes(false);
+    // حذف المعهد يؤثر على كل البيانات
+    cacheClear('institutes'); cacheClear('classes_'); cacheClear('teachers_');
+    cacheClear('convoy_'); cacheClear('dash'); cacheClear('classes_all'); cacheClear('teachers_all');
+    await loadInstitutes(false);
   } catch(e) { showAlert('فشل الحذف: ' + e.message, 'danger'); }
 }
 
@@ -1500,7 +1641,8 @@ async function saveTeacher() {
     if (id) { await callGAS('updateTeacher', { id, ...payload }); showAlert('تم تعديل المعلم'); }
     else { await callGAS('createTeacher', { id: uuid(), ...payload }); showAlert('تم إضافة المعلم'); }
     cancelTeacherEdit();
-    cacheClear('teachers_'); cacheClear('dash');
+    // إلغاء مؤقت البيانات المرتبطة بالمعلمين فقط
+    cacheClear('teachers_'); cacheClear('dash'); cacheClear('convoy_');
     await loadTeachersForInstitute(document.getElementById('teacher-inst-filter').value);
   } catch(e) { showAlert('فشل الحفظ: ' + e.message, 'danger'); }
 }
@@ -1510,7 +1652,7 @@ async function deleteTeacher(id, name) {
   try {
     await callGAS('deleteTeacher', { id });
     showAlert('تم حذف المعلم');
-    cacheClear('teachers_'); cacheClear('dash');
+    cacheClear('teachers_'); cacheClear('dash'); cacheClear('convoy_'); cacheClear('classes_all');
     await loadTeachersForInstitute(document.getElementById('teacher-inst-filter').value);
   } catch(e) { showAlert('فشل الحذف: ' + e.message, 'danger'); }
 }
@@ -1523,11 +1665,15 @@ async function showTeacherDetail(teacherId) {
   const deficit = calcDeficit(t.actual_hours, t.legal_quota);
   const instName = insts.find(x=>x.id===t.institute_id)?.name || '---';
 
-  // Load classes for this teacher
+  // تحميل الفصول من الذاكرة المؤقتة أولاً
   let classes = [];
   try {
-    const allClasses = await callGAS('getClasses', { institute_id: t.institute_id });
-    classes = (allClasses||[]).filter(c => c.teacher_id === teacherId);
+    let instClasses = cacheGet('classes_'+t.institute_id) || cacheGet('classes_all');
+    if (!instClasses) {
+      instClasses = await callGAS('getClasses', { institute_id: t.institute_id });
+      cacheSet('classes_'+t.institute_id, instClasses, CACHE_TTL.classes);
+    }
+    classes = (instClasses||[]).filter(c => c.teacher_id === teacherId);
   } catch(e){}
 
   document.getElementById('teacher-detail-title').textContent = t.name;
@@ -1586,7 +1732,7 @@ async function bulkCreateClasses() {
       await callGAS('createClasses', { institute_id: instId, grade: t.grade, count: t.count });
     }
     showAlert('تم إنشاء الفصول بنجاح');
-    cacheClear('classes_');
+    cacheClear('classes_'); cacheClear('classes_all'); cacheClear('convoy_'); cacheClear('dash');
     await loadClassesForInstitute(instId);
     GRADES.forEach(g => { const el = document.getElementById('bulk-'+g); if(el) el.value=''; });
   } catch(e) { showAlert('فشل إنشاء الفصول: ' + e.message, 'danger'); }
@@ -1666,9 +1812,9 @@ async function assignTeacher(classId, teacherId) {
   try {
     if (teacherId) await callGAS('assignTeacher', { class_id: classId, teacher_id: teacherId });
     else await callGAS('unassignTeacher', { class_id: classId });
-    // update local cache
+    // تحديث مؤقت البيانات المرتبطة بالفصول فقط
     const instId = document.getElementById('class-inst-select').value;
-    cacheClear('classes_'+instId); cacheClear('dash');
+    cacheClear('classes_'+instId); cacheClear('classes_all'); cacheClear('convoy_'); cacheClear('dash');
     const idx = allClassesData.findIndex(c=>c.id===classId);
     if (idx >= 0) allClassesData[idx].teacher_id = teacherId || '';
     const teachers = cacheGet('teachers_'+instId)||[];
@@ -1683,7 +1829,7 @@ async function deleteClass(id) {
     await callGAS('deleteClass', { id });
     showAlert('تم حذف الفصل');
     const instId = document.getElementById('class-inst-select').value;
-    cacheClear('classes_'+instId); cacheClear('dash');
+    cacheClear('classes_'+instId); cacheClear('classes_all'); cacheClear('convoy_'); cacheClear('dash');
     await loadClassesForInstitute(instId);
   } catch(e) { showAlert('فشل الحذف: ' + e.message, 'danger'); }
 }
@@ -1692,25 +1838,27 @@ async function deleteClass(id) {
 //  DASHBOARD
 // ═══════════════════════════════════════════════════════
 async function loadDashboard() {
-  let stats = cacheGet('dash_global');
-  if (!stats) {
-    try { stats = await callGAS('getGlobalStats'); cacheSet('dash_global', stats, 60000); }
-    catch(e) { document.getElementById('dash-global-stats').innerHTML = `<div class="col-12 text-danger">فشل تحميل البيانات: ${e.message}</div>`; return; }
-  }
+  // جلب إحصائيات لوحة التحكم بشكل متوازٍ إذا لم تكن محفوظة
+  const cachedStats = cacheGet('dash_global');
+  const cachedGrade = cacheGet('dash_grade');
+  const cachedVisits = cacheGet('visits_all');
+
+  // بناء قائمة الطلبات المطلوبة فقط
+  const requests = [];
+  if (!cachedStats)  requests.push(callGAS('getGlobalStats').then(d => { cacheSet('dash_global', d, CACHE_TTL.stats); return d; }).catch(()=>null));
+  else requests.push(Promise.resolve(cachedStats));
+
+  if (!cachedGrade)  requests.push(callGAS('getGradeAnalysis').then(d => { cacheSet('dash_grade', d, CACHE_TTL.stats); return d; }).catch(()=>null));
+  else requests.push(Promise.resolve(cachedGrade));
+
+  if (!cachedVisits) requests.push(callGAS('getAllVisits').then(d => { cacheSet('visits_all', d, CACHE_TTL.visits); return d; }).catch(()=>null));
+  else requests.push(Promise.resolve(cachedVisits));
+
+  const [stats, gradeData, visits] = await Promise.all(requests);
+
+  if (!stats) { document.getElementById('dash-global-stats').innerHTML = `<div class="col-12 text-danger">فشل تحميل البيانات</div>`; return; }
   renderDashStats(stats);
-
-  let gradeData = cacheGet('dash_grade');
-  if (!gradeData) {
-    try { gradeData = await callGAS('getGradeAnalysis'); cacheSet('dash_grade', gradeData, 60000); }
-    catch(e){}
-  }
   if (gradeData) renderGradeAnalysis(gradeData);
-
-  let visits = cacheGet('visits_all');
-  if (!visits) {
-    try { visits = await callGAS('getAllVisits'); cacheSet('visits_all', visits, 60000); }
-    catch(e){}
-  }
   if (visits) renderRecentVisits(visits.slice(-5).reverse());
 }
 
@@ -1784,19 +1932,28 @@ function renderRecentVisits(visits) {
 let allConvoyData = [];
 
 async function loadConvoyData() {
-  const instId = document.getElementById('convoy-inst-filter').value;
   let allClasses = cacheGet('convoy_all');
   if (!allClasses) {
     try {
-      // Fetch all institutes then all classes
-      const insts = cacheGet('institutes') || await callGAS('getInstitutes');
-      let combined = [];
-      for (const inst of (insts||[])) {
-        const cls = await callGAS('getClasses', { institute_id: inst.id });
-        (cls||[]).forEach(c => combined.push({ ...c, _inst: inst }));
+      // طلب واحد فقط لكل الفصول — لا حلقة per-institute
+      let rawClasses = cacheGet('classes_all');
+      if (!rawClasses) {
+        // حاول Bootstrap أولاً
+        if (!_bootstrapDone) {
+          const boot = await loadBootstrapData();
+          if (boot && boot.classes) rawClasses = boot.classes;
+        }
+        if (!rawClasses) {
+          rawClasses = await callGAS('getClasses');   // getClasses بدون institute_id = كل الفصول
+          cacheSet('classes_all', rawClasses, CACHE_TTL.classes);
+        }
       }
-      allClasses = combined;
-      cacheSet('convoy_all', allClasses, 60000);
+      // دمج بيانات المعاهد من الذاكرة المؤقتة
+      const insts = cacheGet('institutes') || [];
+      const instMap = {};
+      insts.forEach(inst => { instMap[inst.id] = inst; });
+      allClasses = (rawClasses||[]).map(c => ({ ...c, _inst: instMap[c.institute_id] || {} }));
+      cacheSet('convoy_all', allClasses, CACHE_TTL.convoy);
     } catch(e) { showAlert('فشل تحميل بيانات القوافل: ' + e.message, 'danger'); return; }
   }
   allConvoyData = allClasses.filter(c => classStatus(c.teacher_id) === 'يحتاج قوافل');
@@ -1868,7 +2025,7 @@ async function saveVisit() {
   try {
     await callGAS('createVisit', { id: uuid(), institute_id, visit_date, visitor_name, sufficient_classes, needs_convoy_classes, notes, snapshot_json });
     showAlert('تم حفظ الزيارة بنجاح');
-    cacheClear('visits_');
+    cacheClear('visits_'); cacheClear('dash');  // الزيارة تؤثر على الإحصائيات فقط
     document.getElementById('visit-visitor').value = '';
     document.getElementById('visit-notes').value = '';
     await loadVisitsTable();
@@ -1879,7 +2036,7 @@ async function loadVisitsTable() {
   const filterInst = document.getElementById('visit-filter-inst')?.value || '';
   let data = cacheGet('visits_all');
   if (!data) {
-    try { data = await callGAS('getAllVisits'); cacheSet('visits_all', data, 30000); }
+    try { data = await callGAS('getAllVisits'); cacheSet('visits_all', data, CACHE_TTL.visits); }
     catch(e) { showAlert('فشل تحميل الزيارات: ' + e.message, 'danger'); return; }
   }
   let filtered = data || [];
@@ -1953,13 +2110,23 @@ async function loadRptConvoy() {
   let data = cacheGet('convoy_all');
   if (!data) {
     try {
-      const insts = cacheGet('institutes') || await callGAS('getInstitutes');
-      let combined = [];
-      for (const inst of (insts||[])) {
-        const cls = await callGAS('getClasses', { institute_id: inst.id });
-        (cls||[]).forEach(c => combined.push({ ...c, _inst: inst }));
+      // طلب واحد فقط — نفس منطق loadConvoyData
+      let rawClasses = cacheGet('classes_all');
+      if (!rawClasses) {
+        if (!_bootstrapDone) {
+          const boot = await loadBootstrapData();
+          if (boot && boot.classes) rawClasses = boot.classes;
+        }
+        if (!rawClasses) {
+          rawClasses = await callGAS('getClasses');
+          cacheSet('classes_all', rawClasses, CACHE_TTL.classes);
+        }
       }
-      data = combined; cacheSet('convoy_all', data, 60000);
+      const insts = cacheGet('institutes') || [];
+      const instMap = {};
+      insts.forEach(inst => { instMap[inst.id] = inst; });
+      data = (rawClasses||[]).map(c => ({ ...c, _inst: instMap[c.institute_id] || {} }));
+      cacheSet('convoy_all', data, CACHE_TTL.convoy);
     } catch(e) { showAlert('فشل التحميل: ' + e.message, 'danger'); return; }
   }
   let filtered = data.filter(c => classStatus(c.teacher_id)==='يحتاج قوافل');
@@ -1979,13 +2146,25 @@ async function loadRptTeachers() {
   const cadreF = document.getElementById('rpt-t-cadre').value;
   const extraF = document.getElementById('rpt-t-extra-filter').value;
   let allT = [];
-  const insts = cacheGet('institutes') || await callGAS('getInstitutes');
-  for (const inst of (insts||[])) {
-    if (instId && inst.id !== instId) continue;
-    let t = cacheGet('teachers_'+inst.id);
-    if (!t) { try { t = await callGAS('getTeachers', { institute_id: inst.id }); cacheSet('teachers_'+inst.id, t); } catch(e){} }
-    (t||[]).forEach(x => allT.push({...x, _instName: inst.name}));
+  // طلب واحد لكل المعلمين بدل حلقة per-institute
+  let allTeachers = cacheGet('teachers_all');
+  if (!allTeachers) {
+    if (!_bootstrapDone) {
+      const boot = await loadBootstrapData();
+      if (boot && boot.teachers) allTeachers = boot.teachers;
+    }
+    if (!allTeachers) {
+      try { allTeachers = await callGAS('getTeachers'); cacheSet('teachers_all', allTeachers, CACHE_TTL.teachers); } catch(e){ allTeachers=[]; }
+    }
   }
+  const insts = cacheGet('institutes') || [];
+  const instMap = {};
+  insts.forEach(inst => { instMap[inst.id] = inst; });
+  (allTeachers||[]).forEach(t => {
+    if (instId && t.institute_id !== instId) return;
+    const instName = instMap[t.institute_id]?.name || '---';
+    allT.push({...t, _instName: instName});
+  });
   let filtered = allT.filter(t => {
     if (typeF  && t.teacher_type !== typeF) return false;
     if (cadreF && t.cadre_grade !== cadreF) return false;
@@ -2009,17 +2188,27 @@ async function loadRptTeachers() {
 }
 
 async function loadRptHours() {
-  const insts = cacheGet('institutes') || await callGAS('getInstitutes');
+  const insts = cacheGet('institutes') || [];
+  // طلب واحد لكل المعلمين بدل حلقة per-institute
+  let allTeachers = cacheGet('teachers_all');
+  if (!allTeachers) {
+    if (!_bootstrapDone) {
+      const boot = await loadBootstrapData();
+      if (boot && boot.teachers) allTeachers = boot.teachers;
+    }
+    if (!allTeachers) {
+      try { allTeachers = await callGAS('getTeachers'); cacheSet('teachers_all', allTeachers, CACHE_TTL.teachers); } catch(e){ allTeachers=[]; }
+    }
+  }
   const rows = [];
   for (const inst of (insts||[])) {
-    let t = cacheGet('teachers_'+inst.id);
-    if (!t) { try { t = await callGAS('getTeachers', { institute_id: inst.id }); cacheSet('teachers_'+inst.id, t); } catch(e){ t=[]; } }
-    const totQ = (t||[]).reduce((s,x)=>s+(x.legal_quota||0),0);
-    const totA = (t||[]).reduce((s,x)=>s+(x.actual_hours||0),0);
-    const totE = (t||[]).reduce((s,x)=>s+calcExtra(x.actual_hours,x.legal_quota),0);
-    const totD = (t||[]).reduce((s,x)=>s+calcDeficit(x.actual_hours,x.legal_quota),0);
-    const totS = (t||[]).reduce((s,x)=>s+(x.supervision||0),0);
-    rows.push({name: inst.name, count: (t||[]).length, totQ, totA, totE, totD, totS});
+    const t = (allTeachers||[]).filter(x => x.institute_id === inst.id);
+    const totQ = t.reduce((s,x)=>s+(x.legal_quota||0),0);
+    const totA = t.reduce((s,x)=>s+(x.actual_hours||0),0);
+    const totE = t.reduce((s,x)=>s+calcExtra(x.actual_hours,x.legal_quota),0);
+    const totD = t.reduce((s,x)=>s+calcDeficit(x.actual_hours,x.legal_quota),0);
+    const totS = t.reduce((s,x)=>s+(x.supervision||0),0);
+    rows.push({name: inst.name, count: t.length, totQ, totA, totE, totD, totS});
   }
   document.getElementById('rpt-hours-tbody').innerHTML = rows.map(r=>
     `<tr><td>${esc(r.name)}</td><td>${r.count}</td><td>${r.totQ}</td><td>${r.totA}</td>
@@ -2031,7 +2220,7 @@ async function loadRptHours() {
 async function loadRptVisits() {
   let data = cacheGet('visits_all');
   if (!data) {
-    try { data = await callGAS('getAllVisits'); cacheSet('visits_all', data, 30000); }
+    try { data = await callGAS('getAllVisits'); cacheSet('visits_all', data, CACHE_TTL.visits); }
     catch(e) { showAlert('فشل التحميل: ' + e.message, 'danger'); return; }
   }
   const insts = cacheGet('institutes')||[];
@@ -2050,13 +2239,16 @@ async function loadRptVisits() {
 // ═══════════════════════════════════════════════════════
 async function exportJSON() {
   try {
-    const [insts, allT, allC, allV] = await Promise.all([
-      callGAS('getInstitutes'),
-      (async()=>{ const ins=await callGAS('getInstitutes'); let t=[]; for(const i of(ins||[])){ const r=await callGAS('getTeachers',{institute_id:i.id}); (r||[]).forEach(x=>t.push(x)); } return t; })(),
-      (async()=>{ const ins=await callGAS('getInstitutes'); let c=[]; for(const i of(ins||[])){ const r=await callGAS('getClasses',{institute_id:i.id}); (r||[]).forEach(x=>c.push(x)); } return c; })(),
-      callGAS('getAllVisits')
+    // جلب كل شيء بثلاثة طلبات بدل N×3 طلبات
+    const [boot, allV] = await Promise.all([
+      loadBootstrapData(),
+      cacheGet('visits_all') ? Promise.resolve(cacheGet('visits_all'))
+        : callGAS('getAllVisits').then(d => { cacheSet('visits_all', d, CACHE_TTL.visits); return d; })
     ]);
-    const blob = new Blob([JSON.stringify({ institutes: insts, teachers: allT, classes: allC, visits: allV, exported_at: new Date().toISOString() }, null, 2)], {type:'application/json'});
+    const insts = boot?.institutes || cacheGet('institutes') || [];
+    const allT  = boot?.teachers  || cacheGet('teachers_all') || [];
+    const allC  = boot?.classes   || cacheGet('classes_all')  || [];
+    const blob = new Blob([JSON.stringify({ institutes: insts, teachers: allT, classes: allC, visits: allV||[], exported_at: new Date().toISOString() }, null, 2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = 'backup_matrouh_' + new Date().toISOString().slice(0,10) + '.json';
@@ -2073,7 +2265,8 @@ async function importJSON() {
     const text = await file.text();
     const data = JSON.parse(text);
     await callGAS('importAll', data);
-    cacheClear();
+    cacheClear();       // استيراد كامل ← مسح كامل مبرر
+    _bootstrapDone = false;
     showAlert('تم استيراد البيانات بنجاح. يرجى تحديث الصفحة.');
   } catch(e) { showAlert('فشل الاستيراد: ' + e.message, 'danger'); }
 }
@@ -2159,6 +2352,13 @@ function filterTable(tableId, q) {
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   if (GAS_URL) {
+    // Bootstrap: جلب كل البيانات دفعة واحدة عند البداية
+    loadBootstrapData().then(boot => {
+      if (boot && boot.institutes) {
+        renderInstitutesTable(boot.institutes);
+        populateAllInstSelects(boot.institutes);
+      }
+    });
     checkConnection();
     loadInstitutes();
   } else {
