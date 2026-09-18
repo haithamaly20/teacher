@@ -1139,7 +1139,9 @@ body{
 const GRADES = ["الأول الإعدادي","الثاني الإعدادي","الثالث الإعدادي","الأول الثانوي","الثاني الثانوي","الثالث الثانوي"];
 const PREP_GRADES = GRADES.slice(0,3);
 const SEC_GRADES  = GRADES.slice(3);
-let GAS_URL = localStorage.getItem('GAS_URL') || 'https://script.google.com/macros/s/AKfycbxIm1EbPd01pUylLOOODVFuwqpU7GZ9j3ghrren_OyE45bPv1DD-lUeyVms3sxbpT4w2g/exec';
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwC2ahGd8nrxtmZFOSiXZy9X_DZgne4b-Y5ZqRD75BpcuWOjJvcQG5cGjXMymWR0o0X/exec';
+localStorage.setItem('GAS_URL', DEFAULT_GAS_URL);
+let GAS_URL = DEFAULT_GAS_URL;
 let CACHE = {};  // sessionStorage-backed cache
 let cadreGrades = ["معلم مساعد","معلم","معلم أول","معلم أول (أ)","معلم خبير","كبير معلمين"];
 
@@ -1167,14 +1169,19 @@ function cacheClear(prefix='') {
 // ═══════════════════════════════════════════════════════
 async function callGAS(action, payload={}) {
   if (!GAS_URL) throw new Error('لم يتم تعيين رابط Google Apps Script. اذهب إلى الإعدادات.');
-  const res = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({action, payload})
+
+  const encodedPayload = encodeURIComponent(JSON.stringify(payload));
+  const url = `${GAS_URL}?action=${encodeURIComponent(action)}&payload=${encodedPayload}`;
+
+  const res = await fetch(url, {
+    method: 'GET'
   });
+
   if (!res.ok) throw new Error('خطأ في الشبكة: ' + res.status);
+
   const data = await res.json();
   if (data && data.error) throw new Error(data.error);
+
   return data;
 }
 
