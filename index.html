@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -598,6 +599,7 @@ body{
 <!-- ═══ TOPBAR ═══ -->
 <div id="topbar">
   <div class="brand"><i class="bi bi-journal-bookmark-fill me-2"></i>مطروح الأزهرية — الرياضيات</div>
+  <span style="font-size:.68rem;background:rgba(139,92,246,.18);color:#6d28d9;border-radius:999px;padding:.2rem .65rem;font-weight:700;border:1px solid rgba(139,92,246,.25);white-space:nowrap;">v2.1 — نظام الانتداب</span>
   <div class="spacer"></div>
   <div id="sync-time"></div>
   <div id="conn-indicator">
@@ -662,7 +664,7 @@ body{
       </div>
     </div>
   </div>
-  <div class="row g-3">
+  <div class="row g-3 mb-3">
     <div class="col-md-6">
       <div class="tbl-wrap">
         <div class="tbl-head"><h6><i class="bi bi-bar-chart me-2"></i>تحليل حسب الصف</h6></div>
@@ -679,6 +681,42 @@ body{
           <thead><tr><th>المعهد</th><th>التاريخ</th><th>القائم بالزيارة</th><th>مكتفي</th><th>قوافل</th></tr></thead>
           <tbody id="recent-visits-tbody"><tr><td colspan="5" class="empty-state">---</td></tr></tbody>
         </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- بطاقة ما الجديد — v2.1 -->
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="form-card" style="border-top:3px solid #8b5cf6;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-stars" style="font-size:1.3rem;color:#8b5cf6;"></i>
+          <h6 style="margin:0;color:#6d28d9;font-size:1rem;">ما الجديد في الإصدار 2.1 — نظام انتداب المعلمين</h6>
+          <span style="margin-right:auto;font-size:.72rem;background:rgba(139,92,246,.12);color:#6d28d9;border-radius:999px;padding:.18rem .6rem;border:1px solid rgba(139,92,246,.2);">v2.1</span>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div style="background:rgba(139,92,246,.07);border-radius:13px;padding:1rem;border:1px solid rgba(139,92,246,.12);height:100%;">
+              <div style="font-size:1.4rem;margin-bottom:.4rem;">🏫</div>
+              <strong style="font-size:.88rem;color:#5b21b6;">معاهد الانتداب</strong>
+              <p class="text-muted small mt-1 mb-0">يمكن الآن تعيين المعلم لأكثر من معهد عبر حقل "معاهد الانتداب" (multiselect) في فورم المعلم.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div style="background:rgba(16,185,129,.07);border-radius:13px;padding:1rem;border:1px solid rgba(16,185,129,.12);height:100%;">
+              <div style="font-size:1.4rem;margin-bottom:.4rem;">📋</div>
+              <strong style="font-size:.88rem;color:#065f46;">عمود نوع التواجد</strong>
+              <p class="text-muted small mt-1 mb-0">جدول المعلمين يعرض الآن badge <span style="background:#dcfce7;color:#15803d;border-radius:999px;padding:.1rem .4rem;font-size:.75rem;">أساسي</span> أو <span style="background:#fef3c7;color:#92400e;border-radius:999px;padding:.1rem .4rem;font-size:.75rem;">منتدب</span> مع فلتر مخصص.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div style="background:rgba(245,158,11,.07);border-radius:13px;padding:1rem;border:1px solid rgba(245,158,11,.12);height:100%;">
+              <div style="font-size:1.4rem;margin-bottom:.4rem;">💾</div>
+              <strong style="font-size:.88rem;color:#92400e;">نسخ احتياطي محسَّن</strong>
+              <p class="text-muted small mt-1 mb-0">التصدير والاستيراد يتضمنان الآن بيانات الانتداب كاملةً مع التحقق التلقائي من سلامة الحقول.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -728,20 +766,27 @@ body{
 <div id="sec-teachers" class="section-view">
   <div class="page-title"><i class="bi bi-person-badge me-2"></i>إدارة المعلمين</div>
   <div class="row g-3 mb-3">
-    <div class="col-md-4">
+    <div class="col-md-3">
       <select class="form-select" id="teacher-inst-filter" onchange="loadTeachersForInstitute(this.value)">
         <option value="">-- اختر معهداً --</option>
       </select>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <select class="form-select" id="teacher-type-filter" onchange="applyTeacherFilters()">
         <option value="">كل الأنواع</option>
         <option value="معلم رياضيات">معلم رياضيات</option>
         <option value="معلم يسد عجز">معلم يسد عجز</option>
       </select>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <input type="text" class="form-control" id="teacher-search" placeholder="بحث باسم المعلم..." oninput="applyTeacherFilters()">
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" id="teacher-presence-filter" onchange="applyTeacherFilters()">
+        <option value="">كل أنواع التواجد</option>
+        <option value="أساسي">أساسي فقط</option>
+        <option value="منتدب">منتدب فقط</option>
+      </select>
     </div>
   </div>
   <div class="row g-3 mb-3">
@@ -800,6 +845,21 @@ body{
         <div class="col-md-8"><label class="form-label">ملاحظات</label>
           <input type="text" class="form-control" id="t-notes">
         </div>
+        <div class="col-12">
+          <label class="form-label">
+            <i class="bi bi-arrow-left-right me-1 text-warning"></i>
+            معاهد الانتداب
+            <small class="text-muted fw-normal"> (اختر معهداً أو أكثر إن كان المعلم منتدباً)</small>
+          </label>
+          <select class="form-select" id="t-secondment-institutes" multiple size="4"
+            style="border:1.5px solid #f59e0b; border-radius:11px;">
+          </select>
+          <div class="form-text text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            اضغط Ctrl (أو Command على Mac) لاختيار أكثر من معهد.
+            اترك فارغاً إن لم يكن المعلم منتدباً.
+          </div>
+        </div>
       </div>
       <div class="mt-3 d-flex gap-2">
         <button class="btn btn-primary" onclick="saveTeacher()"><i class="bi bi-save me-1"></i>حفظ</button>
@@ -814,8 +874,8 @@ body{
     <div id="teachers-print-area">
       <div class="print-header"><h4>تقرير المعلمين — مديرية مطروح الأزهرية</h4><p id="teachers-print-date"></p></div>
       <div class="table-responsive"><table class="rtl-table" id="teachers-table">
-        <thead><tr><th>#</th><th>الاسم</th><th>النوع</th><th>المعهد</th><th>الدرجة</th><th>النصاب</th><th>الفعلي</th><th>الزائد</th><th>العجز</th><th>الإشراف</th><th class="no-print">إجراءات</th></tr></thead>
-        <tbody id="teachers-tbody"><tr><td colspan="11" class="empty-state">اختر معهداً لعرض المعلمين</td></tr></tbody>
+        <thead><tr><th>#</th><th>الاسم</th><th>النوع</th><th>المعهد</th><th>نوع التواجد</th><th>الدرجة</th><th>النصاب</th><th>الفعلي</th><th>الزائد</th><th>العجز</th><th>الإشراف</th><th class="no-print">إجراءات</th></tr></thead>
+        <tbody id="teachers-tbody"><tr><td colspan="12" class="empty-state">اختر معهداً لعرض المعلمين</td></tr></tbody>
       </table></div>
       <div class="print-footer"><p>تم الطباعة في: <span id="teachers-print-footer-date"></span></p></div>
       <div class="sig-row">
@@ -973,6 +1033,7 @@ body{
   <ul class="nav nav-tabs mb-3 no-print" id="report-tabs">
     <li class="nav-item"><button class="nav-link active" onclick="showReport('rpt-convoy')">القوافل</button></li>
     <li class="nav-item"><button class="nav-link" onclick="showReport('rpt-teachers')">المعلمون</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="showReport('rpt-secondment')">الانتداب</button></li>
     <li class="nav-item"><button class="nav-link" onclick="showReport('rpt-hours')">الحصص</button></li>
     <li class="nav-item"><button class="nav-link" onclick="showReport('rpt-visits-sum')">الزيارات</button></li>
   </ul>
@@ -1003,12 +1064,17 @@ body{
 
   <!-- تقرير المعلمين -->
   <div id="rpt-teachers" class="report-panel" style="display:none">
-    <div class="d-flex gap-2 mb-2 no-print">
+    <div class="d-flex gap-2 mb-2 no-print flex-wrap">
       <select class="form-select form-select-sm w-auto" id="rpt-t-inst"><option value="">كل المعاهد</option></select>
       <select class="form-select form-select-sm w-auto" id="rpt-t-type"><option value="">كل الأنواع</option><option>معلم رياضيات</option><option>معلم يسد عجز</option></select>
       <select class="form-select form-select-sm w-auto" id="rpt-t-cadre"><option value="">كل الدرجات</option></select>
       <select class="form-select form-select-sm w-auto" id="rpt-t-extra-filter">
         <option value="">الكل</option><option value="extra">لديهم حصص زائدة</option><option value="deficit">لديهم عجز</option>
+      </select>
+      <select class="form-select form-select-sm w-auto" id="rpt-t-secondment-filter">
+        <option value="">كل التواجد</option>
+        <option value="has_secondment">منتدب لمعاهد أخرى</option>
+        <option value="no_secondment">غير منتدب</option>
       </select>
       <button class="btn btn-sm btn-primary" onclick="loadRptTeachers()"><i class="bi bi-funnel me-1"></i>تطبيق</button>
       <button class="btn btn-sm btn-outline-secondary" onclick="printSection('rpt-teachers-print')"><i class="bi bi-printer me-1"></i>طباعة</button>
@@ -1017,11 +1083,50 @@ body{
       <div class="print-header"><h4>تقرير المعلمين الشامل</h4></div>
       <div class="tbl-wrap"><div class="table-responsive">
         <table class="rtl-table" id="rpt-teachers-table">
-          <thead><tr><th>#</th><th>الاسم</th><th>النوع</th><th>المعهد</th><th>الدرجة</th><th>النصاب</th><th>الفعلي</th><th>الزائد</th><th>العجز</th><th>الإشراف</th><th>ملاحظات</th></tr></thead>
-          <tbody id="rpt-teachers-tbody"><tr><td colspan="11" class="empty-state">اضغط "تطبيق" لعرض البيانات</td></tr></tbody>
+          <thead><tr><th>#</th><th>الاسم</th><th>النوع</th><th>المعهد الأساسي</th><th>معاهد الانتداب</th><th>الدرجة</th><th>النصاب</th><th>الفعلي</th><th>الزائد</th><th>العجز</th><th>الإشراف</th><th>ملاحظات</th></tr></thead>
+          <tbody id="rpt-teachers-tbody"><tr><td colspan="12" class="empty-state">اضغط "تطبيق" لعرض البيانات</td></tr></tbody>
         </table>
       </div></div>
       <div class="print-footer"><div id="rpt-teachers-totals"></div></div>
+      <div class="sig-row">
+        <div class="sig-box"><div class="sig-line"></div><p>مفتش الرياضيات</p></div>
+        <div class="sig-box"><div class="sig-line"></div><p>مدير المديرية</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تقرير الانتداب -->
+  <div id="rpt-secondment" class="report-panel" style="display:none">
+    <div class="d-flex gap-2 mb-2 no-print flex-wrap">
+      <select class="form-select form-select-sm w-auto" id="rpt-sec-inst"><option value="">كل المعاهد (المُنتدَب إليها)</option></select>
+      <button class="btn btn-sm btn-primary" onclick="loadRptSecondment()"><i class="bi bi-funnel me-1"></i>تطبيق</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="printSection('rpt-secondment-print')"><i class="bi bi-printer me-1"></i>طباعة</button>
+    </div>
+    <div id="rpt-secondment-print">
+      <div class="print-header"><h4>تقرير المعلمين المنتدبين</h4></div>
+      <div class="tbl-wrap"><div class="table-responsive">
+        <table class="rtl-table" id="rpt-secondment-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>اسم المعلم</th>
+              <th>النوع</th>
+              <th>المعهد الأساسي</th>
+              <th>المعهد المنتدَب إليه</th>
+              <th>الدرجة</th>
+              <th>النصاب</th>
+              <th>الفعلي</th>
+              <th>الزائد</th>
+            </tr>
+          </thead>
+          <tbody id="rpt-secondment-tbody">
+            <tr><td colspan="9" class="empty-state">اضغط "تطبيق" لعرض البيانات</td></tr>
+          </tbody>
+        </table>
+      </div></div>
+      <div class="print-footer">
+        <p>إجمالي حالات الانتداب: <span id="rpt-secondment-total"></span></p>
+      </div>
       <div class="sig-row">
         <div class="sig-box"><div class="sig-line"></div><p>مفتش الرياضيات</p></div>
         <div class="sig-box"><div class="sig-line"></div><p>مدير المديرية</p></div>
@@ -1475,6 +1580,11 @@ function populateAllInstSelects(data) {
     const firstOpt = hasAll ? '<option value="">كل المعاهد</option>' : '<option value="">-- اختر --</option>';
     el.innerHTML = firstOpt + (data||[]).map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
   });
+  // ملء قائمة معاهد الانتداب (multiselect — بدون خيار "كل المعاهد")
+  const secEl = document.getElementById('t-secondment-institutes');
+  if (secEl) {
+    secEl.innerHTML = (data||[]).map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+  }
 }
 
 function populateInstSelect(id) {
@@ -1540,7 +1650,7 @@ async function deleteInstitute(id, name) {
 let allTeachersData = [];
 
 async function loadTeachersForInstitute(instId) {
-  if (!instId) { document.getElementById('teachers-tbody').innerHTML = '<tr><td colspan="11" class="empty-state">اختر معهداً</td></tr>'; return; }
+  if (!instId) { document.getElementById('teachers-tbody').innerHTML = '<tr><td colspan="12" class="empty-state">اختر معهداً</td></tr>'; return; }
   const cKey = 'teachers_'+instId;
   let data = cacheGet(cKey);
 
@@ -1561,20 +1671,54 @@ async function loadTeachersForInstitute(instId) {
     }
     catch(e) { showAlert('فشل تحميل المعلمين: ' + e.message, 'danger'); return; }
   }
-  allTeachersData = data || [];
+
+  // ضمان توفر teachers_all لاستخراج المنتدبين
+  // (يُجلب مرة واحدة فقط إن لم يكن محمَّلاً بعد)
+  let allTeachers = cacheGet('teachers_all');
+  if (!allTeachers) {
+    try {
+      const boot = await loadBootstrapData();
+      allTeachers = boot?.teachers || cacheGet('teachers_all') || [];
+    } catch(e) {
+      allTeachers = [];
+    }
+  }
+
+  // دمج المعلمين الأساسيين مع المنتدبين إلى هذا المعهد
+  const primaryTeachers = (data || []).map(t => ({ ...t, _presence: 'أساسي' }));
+  const secondedTeachers = allTeachers
+    .filter(t => t.institute_id !== instId &&
+                 Array.isArray(t.secondment_institutes) &&
+                 t.secondment_institutes.includes(instId))
+    .map(t => ({ ...t, _presence: 'منتدب' }));
+
+  allTeachersData = [...primaryTeachers, ...secondedTeachers];
+
+  // تحديث عداد المنتدبين في رأس الجدول إن وُجد
+  const secondedCount = secondedTeachers.length;
+  const tblHead = document.querySelector('#sec-teachers .tbl-head h6');
+  if (tblHead) {
+    tblHead.innerHTML = secondedCount > 0
+      ? `جدول المعلمين <span style="background:#fef3c7;color:#92400e;font-size:.75rem;padding:.2rem .55rem;border-radius:999px;font-weight:650;margin-right:.5rem;"><i class="bi bi-arrow-left-right"></i> ${secondedCount} منتدب</span>`
+      : 'جدول المعلمين';
+  }
+
   if (allTeachersData.length === 0) {
-    document.getElementById('teachers-tbody').innerHTML = '<tr><td colspan="11" class="empty-state">لا يوجد معلمون في هذا المعهد</td></tr>';
+    document.getElementById('teachers-tbody').innerHTML = '<tr><td colspan="12" class="empty-state">لا يوجد معلمون في هذا المعهد</td></tr>';
     return;
   }
   applyTeacherFilters();
 }
 
 function applyTeacherFilters() {
-  const typeF = document.getElementById('teacher-type-filter').value;
-  const search = document.getElementById('teacher-search').value.trim().toLowerCase();
+  const typeF     = document.getElementById('teacher-type-filter').value;
+  const search    = document.getElementById('teacher-search').value.trim().toLowerCase();
+  const presenceF = (document.getElementById('teacher-presence-filter') || {}).value || '';
   let filtered = allTeachersData.filter(t => {
     if (typeF && t.teacher_type !== typeF) return false;
     if (search && !t.name.toLowerCase().includes(search)) return false;
+    if (presenceF === 'أساسي'  && t._presence !== 'أساسي')  return false;
+    if (presenceF === 'منتدب'  && t._presence !== 'منتدب')  return false;
     return true;
   });
   renderTeachersTable(filtered);
@@ -1582,27 +1726,38 @@ function applyTeacherFilters() {
 
 function renderTeachersTable(data) {
   const tbody = document.getElementById('teachers-tbody');
-  if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="11" class="empty-state">لا يوجد معلمون</td></tr>'; return; }
+  if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="12" class="empty-state">لا يوجد معلمون</td></tr>'; return; }
   const insts = cacheGet('institutes') || [];
   tbody.innerHTML = data.map((t,i) => {
     const extra = calcExtra(t.actual_hours, t.legal_quota);
     const deficit = calcDeficit(t.actual_hours, t.legal_quota);
     const instName = insts.find(x=>x.id===t.institute_id)?.name || '---';
-    return `<tr>
+    const isSeconded = t._presence === 'منتدب';
+    const presenceBadge = isSeconded
+      ? `<span style="background:#fef3c7;color:#92400e;font-size:.75rem;padding:.28rem .6rem;border-radius:999px;display:inline-flex;align-items:center;gap:.3rem;font-weight:650;">
+           <i class="bi bi-arrow-left-right"></i> منتدب
+         </span>`
+      : `<span style="background:#dcfce7;color:#15803d;font-size:.75rem;padding:.28rem .6rem;border-radius:999px;display:inline-flex;align-items:center;gap:.3rem;font-weight:650;">
+           <i class="bi bi-house-check"></i> أساسي
+         </span>`;
+    // زر التعديل غير متاح للمنتدب من هذا العرض (يُعدَّل من معهده الأساسي)
+    const actionBtns = isSeconded
+      ? `<span class="text-muted small">التعديل من المعهد الأساسي</span>`
+      : `<button class="btn btn-sm btn-outline-primary me-1" onclick='editTeacher(${JSON.stringify(t)})'><i class="bi bi-pencil"></i></button>
+         <button class="btn btn-sm btn-outline-danger" onclick="deleteTeacher('${t.id}','${esc(t.name)}')"><i class="bi bi-trash"></i></button>`;
+    return `<tr${isSeconded ? ' style="background:rgba(245,158,11,.06);"' : ''}>
       <td>${i+1}</td>
       <td><a href="#" onclick="showTeacherDetail('${t.id}');return false">${esc(t.name)}</a></td>
       <td><span class="badge ${t.teacher_type==='معلم رياضيات'?'bg-primary':'bg-warning text-dark'}">${esc(t.teacher_type)}</span></td>
       <td>${esc(instName)}</td>
+      <td>${presenceBadge}</td>
       <td>${esc(t.cadre_grade||'')}</td>
       <td>${t.legal_quota||0}</td>
       <td>${t.actual_hours||0}</td>
       <td class="${extra>0?'text-success fw-bold':''}">${extra}</td>
       <td class="${deficit>0?'text-danger fw-bold':''}">${deficit}</td>
       <td>${t.supervision||0}</td>
-      <td class="no-print">
-        <button class="btn btn-sm btn-outline-primary me-1" onclick='editTeacher(${JSON.stringify(t)})'><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-outline-danger" onclick="deleteTeacher('${t.id}','${esc(t.name)}')"><i class="bi bi-trash"></i></button>
-      </td>
+      <td class="no-print">${actionBtns}</td>
     </tr>`;
   }).join('');
 }
@@ -1624,7 +1779,17 @@ function editTeacher(t) {
   document.getElementById('t-notes').value = t.notes||'';
   // populate institute select
   populateInstSelect('t-institute');
-  setTimeout(()=>{ document.getElementById('t-institute').value = t.institute_id||''; }, 200);
+  setTimeout(()=>{
+    document.getElementById('t-institute').value = t.institute_id||'';
+    // ملء معاهد الانتداب
+    const secEl = document.getElementById('t-secondment-institutes');
+    if (secEl) {
+      const secIds = Array.isArray(t.secondment_institutes) ? t.secondment_institutes : [];
+      Array.from(secEl.options).forEach(opt => {
+        opt.selected = secIds.includes(opt.value);
+      });
+    }
+  }, 200);
   populateCadreSelect('t-cadre');
   setTimeout(()=>{ document.getElementById('t-cadre').value = t.cadre_grade||''; }, 200);
   calcTeacherHours();
@@ -1640,6 +1805,9 @@ function cancelTeacherEdit() {
   document.getElementById('t-stage').value = '';
   const hintEl = document.getElementById('quota-hint');
   if (hintEl) hintEl.textContent = '';
+  // مسح اختيارات معاهد الانتداب
+  const secEl = document.getElementById('t-secondment-institutes');
+  if (secEl) Array.from(secEl.options).forEach(opt => opt.selected = false);
   document.getElementById('teacher-form-title').innerHTML = '<i class="bi bi-person-plus me-1"></i>بيانات المعلم';
 }
 
@@ -1656,12 +1824,17 @@ async function saveTeacher() {
   const notes = document.getElementById('t-notes').value.trim();
   const deficit_hours = calcDeficit(actual_hours, legal_quota);
   const extra_hours = calcExtra(actual_hours, legal_quota);
+  // جمع معاهد الانتداب المحددة
+  const secEl = document.getElementById('t-secondment-institutes');
+  const secondment_institutes = secEl
+    ? Array.from(secEl.selectedOptions).map(o => o.value).filter(v => v && v !== institute_id)
+    : [];
 
   if (!name) { showAlert('اسم المعلم مطلوب', 'warning'); return; }
   if (!institute_id) { showAlert('يجب تحديد المعهد', 'warning'); return; }
   if (legal_quota < 0) { showAlert('النصاب القانوني لا يمكن أن يكون سالبًا', 'warning'); return; }
 
-  const payload = { name, institute_id, teacher_type, cadre_grade, legal_quota, actual_hours, math_hours, deficit_hours, extra_hours, supervision, notes };
+  const payload = { name, institute_id, teacher_type, cadre_grade, legal_quota, actual_hours, math_hours, deficit_hours, extra_hours, supervision, notes, secondment_institutes };
   try {
     if (id) { await callGAS('updateTeacher', { id, ...payload }); showAlert('تم تعديل المعلم'); }
     else { await callGAS('createTeacher', { id: uuid(), ...payload }); showAlert('تم إضافة المعلم'); }
@@ -1684,11 +1857,28 @@ async function deleteTeacher(id, name) {
 
 async function showTeacherDetail(teacherId) {
   const insts = cacheGet('institutes') || [];
+
+  // ابحث في allTeachersData أولاً، ثم في teachers_all (حالة فتح التفاصيل من سياق مختلف)
   let t = allTeachersData.find(x => x.id === teacherId);
-  if (!t) return;
-  const extra = calcExtra(t.actual_hours, t.legal_quota);
+  if (!t) {
+    const allT = cacheGet('teachers_all') || [];
+    t = allT.find(x => x.id === teacherId);
+  }
+  if (!t) { showAlert('لم يُعثر على بيانات المعلم', 'warning'); return; }
+
+  const extra   = calcExtra(t.actual_hours, t.legal_quota);
   const deficit = calcDeficit(t.actual_hours, t.legal_quota);
-  const instName = insts.find(x=>x.id===t.institute_id)?.name || '---';
+  const instName = insts.find(x => x.id === t.institute_id)?.name || '---';
+  const isSeconded = t._presence === 'منتدب';
+
+  // badge التواجد للعنوان
+  const presenceBadgeTitle = isSeconded
+    ? `<span style="background:#fef3c7;color:#92400e;font-size:.78rem;padding:.25rem .65rem;border-radius:999px;font-weight:650;margin-right:.5rem;vertical-align:middle;">
+         <i class="bi bi-arrow-left-right me-1"></i>منتدب
+       </span>`
+    : `<span style="background:#dcfce7;color:#15803d;font-size:.78rem;padding:.25rem .65rem;border-radius:999px;font-weight:650;margin-right:.5rem;vertical-align:middle;">
+         <i class="bi bi-house-check me-1"></i>أساسي
+       </span>`;
 
   // تحميل الفصول من الذاكرة المؤقتة أولاً
   let classes = [];
@@ -1701,24 +1891,55 @@ async function showTeacherDetail(teacherId) {
     classes = (instClasses||[]).filter(c => c.teacher_id === teacherId);
   } catch(e){}
 
-  document.getElementById('teacher-detail-title').textContent = t.name;
+  // بناء قسم معاهد الانتداب
+  const secInsts = Array.isArray(t.secondment_institutes) ? t.secondment_institutes : [];
+  const secBlock = secInsts.length
+    ? `<div class="col-12 mt-1">
+         <span class="text-muted small"><i class="bi bi-arrow-left-right me-1 text-warning"></i>معاهد الانتداب:</span>
+         <div class="d-flex flex-wrap gap-1 mt-1">
+           ${secInsts.map(sid => {
+               const sInst = insts.find(x => x.id === sid);
+               return sInst
+                 ? `<span style="background:#fef3c7;color:#92400e;font-size:.78rem;padding:.3rem .65rem;border-radius:999px;font-weight:650;display:inline-flex;align-items:center;gap:.3rem;">
+                      <i class="bi bi-building"></i>${esc(sInst.name)}
+                    </span>`
+                 : '';
+             }).join('')}
+         </div>
+       </div>`
+    : '';
+
+  // تلميح في حالة المعلم المنتدب
+  const secondedNote = isSeconded
+    ? `<div class="alert alert-warning py-2 px-3 mb-3" style="border-radius:10px;font-size:.83rem;">
+         <i class="bi bi-info-circle me-1"></i>
+         هذا المعلم <strong>منتدب</strong> إلى هذا المعهد — معهده الأساسي: <strong>${esc(instName)}</strong>.
+         يمكن تعديل بياناته من صفحة معهده الأساسي.
+       </div>`
+    : '';
+
+  document.getElementById('teacher-detail-title').innerHTML = esc(t.name) + presenceBadgeTitle;
   document.getElementById('teacher-detail-body').innerHTML = `
+    ${secondedNote}
     <div class="row g-2 mb-3">
-      <div class="col-6"><span class="text-muted small">المعهد:</span><br><strong>${esc(instName)}</strong></div>
+      <div class="col-6"><span class="text-muted small">المعهد الأساسي:</span><br><strong>${esc(instName)}</strong></div>
       <div class="col-6"><span class="text-muted small">النوع:</span><br><strong>${esc(t.teacher_type)}</strong></div>
       <div class="col-6"><span class="text-muted small">درجة الكادر:</span><br><strong>${esc(t.cadre_grade||'---')}</strong></div>
       <div class="col-3"><span class="text-muted small">النصاب:</span><br><strong>${t.legal_quota||0}</strong></div>
       <div class="col-3"><span class="text-muted small">الفعلي:</span><br><strong>${t.actual_hours||0}</strong></div>
-      <div class="col-3"><span class="text-muted small">الزائد:</span><br><strong class="${extra>0?'text-success':''}">${extra}</strong></div>
-      <div class="col-3"><span class="text-muted small">العجز:</span><br><strong class="${deficit>0?'text-danger':''}">${deficit}</strong></div>
+      <div class="col-3"><span class="text-muted small">الزائد:</span><br><strong class="${extra>0?'text-success fw-bold':''}">${extra}</strong></div>
+      <div class="col-3"><span class="text-muted small">العجز:</span><br><strong class="${deficit>0?'text-danger fw-bold':''}">${deficit}</strong></div>
       <div class="col-3"><span class="text-muted small">حصص رياضيات:</span><br><strong>${t.math_hours||0}</strong></div>
       <div class="col-3"><span class="text-muted small">الإشراف:</span><br><strong>${t.supervision||0}</strong></div>
       ${t.notes ? `<div class="col-12"><span class="text-muted small">ملاحظات:</span><br>${esc(t.notes)}</div>` : ''}
+      ${secBlock}
     </div>
     <h6 class="text-primary">الفصول المرتبطة (${classes.length})</h6>
-    ${classes.length ? `<table class="rtl-table"><thead><tr><th>الصف</th><th>رقم الفصل</th><th>الحالة</th></tr></thead><tbody>
-      ${classes.map(c=>`<tr><td>${esc(c.grade)}</td><td>${c.class_number}</td><td><span class="badge-ok">🟢 مكتفي</span></td></tr>`).join('')}
-    </tbody></table>` : '<p class="text-muted">لا توجد فصول مرتبطة.</p>'}
+    ${classes.length
+      ? `<table class="rtl-table"><thead><tr><th>الصف</th><th>رقم الفصل</th><th>الحالة</th></tr></thead><tbody>
+           ${classes.map(c=>`<tr><td>${esc(c.grade)}</td><td>${c.class_number}</td><td><span class="badge-ok">🟢 مكتفي</span></td></tr>`).join('')}
+         </tbody></table>`
+      : '<p class="text-muted small">لا توجد فصول مرتبطة.</p>'}
   `;
   new bootstrap.Modal(document.getElementById('teacherDetailModal')).show();
 }
@@ -2136,6 +2357,9 @@ async function populateReportFilters() {
   if (!insts) { try { insts = await callGAS('getInstitutes'); cacheSet('institutes', insts); } catch(e){ return; } }
   const instOpts = '<option value="">كل المعاهد</option>' + insts.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('');
   ['rpt-convoy-inst','rpt-t-inst'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=instOpts; });
+  // قائمة المعاهد المنتدَب إليها
+  const secInstEl = document.getElementById('rpt-sec-inst');
+  if (secInstEl) secInstEl.innerHTML = '<option value="">كل المعاهد (المُنتدَب إليها)</option>' + insts.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('');
   const gradeOpts = '<option value="">كل الصفوف</option>' + GRADES.map(g=>`<option value="${g}">${g}</option>`).join('');
   const eg = document.getElementById('rpt-convoy-grade');
   if (eg) eg.innerHTML = gradeOpts;
@@ -2182,12 +2406,11 @@ async function loadRptConvoy() {
 }
 
 async function loadRptTeachers() {
-  const instId = document.getElementById('rpt-t-inst').value;
-  const typeF  = document.getElementById('rpt-t-type').value;
-  const cadreF = document.getElementById('rpt-t-cadre').value;
-  const extraF = document.getElementById('rpt-t-extra-filter').value;
-  let allT = [];
-  // طلب واحد لكل المعلمين بدل حلقة per-institute
+  const instId   = document.getElementById('rpt-t-inst').value;
+  const typeF    = document.getElementById('rpt-t-type').value;
+  const cadreF   = document.getElementById('rpt-t-cadre').value;
+  const extraF   = document.getElementById('rpt-t-extra-filter').value;
+  const secF     = document.getElementById('rpt-t-secondment-filter').value;
   let allTeachers = cacheGet('teachers_all');
   if (!allTeachers) {
     if (!_bootstrapDone) {
@@ -2201,36 +2424,133 @@ async function loadRptTeachers() {
   const insts = cacheGet('institutes') || [];
   const instMap = {};
   insts.forEach(inst => { instMap[inst.id] = inst; });
-  (allTeachers||[]).forEach(t => {
-    if (instId && t.institute_id !== instId) return;
-    const instName = instMap[t.institute_id]?.name || '---';
-    allT.push({...t, _instName: instName});
-  });
-  let filtered = allT.filter(t => {
-    if (typeF  && t.teacher_type !== typeF) return false;
-    if (cadreF && t.cadre_grade !== cadreF) return false;
-    if (extraF === 'extra'  && calcExtra(t.actual_hours, t.legal_quota) <= 0) return false;
+
+  let filtered = (allTeachers||[]).filter(t => {
+    if (instId && t.institute_id !== instId) return false;
+    if (typeF  && t.teacher_type !== typeF)  return false;
+    if (cadreF && t.cadre_grade  !== cadreF) return false;
+    if (extraF === 'extra'   && calcExtra(t.actual_hours, t.legal_quota)   <= 0) return false;
     if (extraF === 'deficit' && calcDeficit(t.actual_hours, t.legal_quota) <= 0) return false;
+    const hasSecondment = Array.isArray(t.secondment_institutes) && t.secondment_institutes.length > 0;
+    if (secF === 'has_secondment' && !hasSecondment) return false;
+    if (secF === 'no_secondment'  &&  hasSecondment) return false;
     return true;
   });
+
   let totQuota=0, totActual=0, totExtra=0, totDef=0;
   document.getElementById('rpt-teachers-tbody').innerHTML = filtered.map((t,i) => {
-    const extra = calcExtra(t.actual_hours, t.legal_quota);
-    const def   = calcDeficit(t.actual_hours, t.legal_quota);
+    const extra    = calcExtra(t.actual_hours, t.legal_quota);
+    const def      = calcDeficit(t.actual_hours, t.legal_quota);
+    const instName = instMap[t.institute_id]?.name || '---';
     totQuota += t.legal_quota||0; totActual += t.actual_hours||0; totExtra += extra; totDef += def;
-    return `<tr><td>${i+1}</td><td>${esc(t.name)}</td><td>${esc(t.teacher_type)}</td><td>${esc(t._instName)}</td>
-      <td>${esc(t.cadre_grade||'')}</td><td>${t.legal_quota||0}</td><td>${t.actual_hours||0}</td>
+
+    // بناء خلية معاهد الانتداب
+    const secIds = Array.isArray(t.secondment_institutes) ? t.secondment_institutes : [];
+    const secCell = secIds.length
+      ? secIds.map(sid => {
+          const sName = instMap[sid]?.name || sid;
+          return `<span style="background:#fef3c7;color:#92400e;font-size:.72rem;padding:.2rem .5rem;border-radius:999px;display:inline-block;margin:.1rem;font-weight:650;">
+                    <i class="bi bi-arrow-left-right"></i> ${esc(sName)}
+                  </span>`;
+        }).join('')
+      : `<span class="text-muted small">—</span>`;
+
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${esc(t.name)}</td>
+      <td><span class="badge ${t.teacher_type==='معلم رياضيات'?'bg-primary':'bg-warning text-dark'}">${esc(t.teacher_type)}</span></td>
+      <td>${esc(instName)}</td>
+      <td>${secCell}</td>
+      <td>${esc(t.cadre_grade||'')}</td>
+      <td>${t.legal_quota||0}</td>
+      <td>${t.actual_hours||0}</td>
       <td class="${extra>0?'text-success fw-bold':''}">${extra}</td>
       <td class="${def>0?'text-danger fw-bold':''}">${def}</td>
-      <td>${t.supervision||0}</td><td>${esc(t.notes||'')}</td></tr>`;
-  }).join('') || '<tr><td colspan="11" class="empty-state">لا توجد نتائج</td></tr>';
+      <td>${t.supervision||0}</td>
+      <td>${esc(t.notes||'')}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="12" class="empty-state">لا توجد نتائج</td></tr>';
+
   document.getElementById('rpt-teachers-totals').innerHTML =
     `<strong>الإجماليات: النصاب ${totQuota} | الفعلي ${totActual} | الزائد ${totExtra} | العجز ${totDef}</strong>`;
 }
 
+async function loadRptSecondment() {
+  const filterInstId = document.getElementById('rpt-sec-inst').value; // المعهد المنتدَب إليه
+  let allTeachers = cacheGet('teachers_all');
+  if (!allTeachers) {
+    if (!_bootstrapDone) {
+      const boot = await loadBootstrapData();
+      if (boot && boot.teachers) allTeachers = boot.teachers;
+    }
+    if (!allTeachers) {
+      try { allTeachers = await callGAS('getTeachers'); cacheSet('teachers_all', allTeachers, CACHE_TTL.teachers); } catch(e){ allTeachers=[]; }
+    }
+  }
+  const insts   = cacheGet('institutes') || [];
+  const instMap = {};
+  insts.forEach(inst => { instMap[inst.id] = inst; });
+
+  // بناء قائمة صفوف: معلم × معهد انتداب واحد لكل صف
+  const rows = [];
+  (allTeachers||[]).forEach(t => {
+    const secIds = Array.isArray(t.secondment_institutes) ? t.secondment_institutes : [];
+    secIds.forEach(sid => {
+      if (filterInstId && sid !== filterInstId) return;
+      rows.push({
+        teacher:     t,
+        primaryInst: instMap[t.institute_id] || { name: '---' },
+        secInst:     instMap[sid]            || { name: sid }
+      });
+    });
+  });
+
+  document.getElementById('rpt-secondment-total').textContent = rows.length;
+
+  if (!rows.length) {
+    document.getElementById('rpt-secondment-tbody').innerHTML =
+      '<tr><td colspan="9" class="empty-state">لا يوجد معلمون منتدبون في هذا الاختيار</td></tr>';
+    return;
+  }
+
+  // ترتيب: المعهد المنتدَب إليه ← اسم المعلم
+  rows.sort((a,b) => a.secInst.name.localeCompare(b.secInst.name, 'ar') ||
+                     a.teacher.name.localeCompare(b.teacher.name, 'ar'));
+
+  let lastSecInst = null;
+  document.getElementById('rpt-secondment-tbody').innerHTML = rows.map((row, i) => {
+    const t    = row.teacher;
+    const extra = calcExtra(t.actual_hours, t.legal_quota);
+    // صف فاصل عند تغيير المعهد المنتدَب إليه
+    let groupHeader = '';
+    if (row.secInst.name !== lastSecInst) {
+      lastSecInst = row.secInst.name;
+      groupHeader = `<tr style="background:linear-gradient(90deg,rgba(37,99,235,.08),transparent);">
+        <td colspan="9" style="font-weight:750;color:#1d4ed8;padding:.55rem .85rem;font-size:.85rem;">
+          <i class="bi bi-building me-1"></i>${esc(row.secInst.name)}
+        </td>
+      </tr>`;
+    }
+    return groupHeader + `<tr>
+      <td>${i+1}</td>
+      <td><strong>${esc(t.name)}</strong></td>
+      <td><span class="badge ${t.teacher_type==='معلم رياضيات'?'bg-primary':'bg-warning text-dark'}">${esc(t.teacher_type)}</span></td>
+      <td>${esc(row.primaryInst.name)}</td>
+      <td>
+        <span style="background:#dbeafe;color:#1e40af;font-size:.75rem;padding:.25rem .6rem;border-radius:999px;font-weight:650;">
+          <i class="bi bi-arrow-left-right me-1"></i>${esc(row.secInst.name)}
+        </span>
+      </td>
+      <td>${esc(t.cadre_grade||'')}</td>
+      <td>${t.legal_quota||0}</td>
+      <td>${t.actual_hours||0}</td>
+      <td class="${extra>0?'text-success fw-bold':''}">${extra}</td>
+    </tr>`;
+  }).join('');
+}
+
 async function loadRptHours() {
   const insts = cacheGet('institutes') || [];
-  // طلب واحد لكل المعلمين بدل حلقة per-institute
   let allTeachers = cacheGet('teachers_all');
   if (!allTeachers) {
     if (!_bootstrapDone) {
@@ -2243,19 +2563,45 @@ async function loadRptHours() {
   }
   const rows = [];
   for (const inst of (insts||[])) {
-    const t = (allTeachers||[]).filter(x => x.institute_id === inst.id);
-    const totQ = t.reduce((s,x)=>s+(x.legal_quota||0),0);
-    const totA = t.reduce((s,x)=>s+(x.actual_hours||0),0);
-    const totE = t.reduce((s,x)=>s+calcExtra(x.actual_hours,x.legal_quota),0);
-    const totD = t.reduce((s,x)=>s+calcDeficit(x.actual_hours,x.legal_quota),0);
-    const totS = t.reduce((s,x)=>s+(x.supervision||0),0);
-    rows.push({name: inst.name, count: t.length, totQ, totA, totE, totD, totS});
+    // معلمون أساسيون في هذا المعهد
+    const primary = (allTeachers||[]).filter(x => x.institute_id === inst.id);
+    // معلمون منتدبون إلى هذا المعهد (معهدهم الأساسي مختلف)
+    const seconded = (allTeachers||[]).filter(x =>
+      x.institute_id !== inst.id &&
+      Array.isArray(x.secondment_institutes) &&
+      x.secondment_institutes.includes(inst.id)
+    );
+    const totQ = primary.reduce((s,x)=>s+(x.legal_quota||0),0);
+    const totA = primary.reduce((s,x)=>s+(x.actual_hours||0),0);
+    const totE = primary.reduce((s,x)=>s+calcExtra(x.actual_hours,x.legal_quota),0);
+    const totD = primary.reduce((s,x)=>s+calcDeficit(x.actual_hours,x.legal_quota),0);
+    const totS = primary.reduce((s,x)=>s+(x.supervision||0),0);
+    rows.push({
+      name: inst.name,
+      primary: primary.length,
+      seconded: seconded.length,
+      totQ, totA, totE, totD, totS
+    });
   }
+
+  // تحديث رأس الجدول ليشمل عمودَي المعلمين
+  document.querySelector('#rpt-hours-table thead tr').innerHTML =
+    `<th>المعهد</th><th>أساسيون</th><th>منتدبون إليه</th><th>إجمالي النصاب</th><th>إجمالي الفعلي</th><th>إجمالي الزائد</th><th>إجمالي العجز</th><th>إجمالي الإشراف</th>`;
+
   document.getElementById('rpt-hours-tbody').innerHTML = rows.map(r=>
-    `<tr><td>${esc(r.name)}</td><td>${r.count}</td><td>${r.totQ}</td><td>${r.totA}</td>
-     <td class="${r.totE>0?'text-success fw-bold':''}">${r.totE}</td>
-     <td class="${r.totD>0?'text-danger fw-bold':''}">${r.totD}</td>
-     <td>${r.totS}</td></tr>`).join('') || '<tr><td colspan="7" class="empty-state">لا توجد بيانات</td></tr>';
+    `<tr>
+      <td><strong>${esc(r.name)}</strong></td>
+      <td>${r.primary}</td>
+      <td>${r.seconded > 0
+        ? `<span style="background:#fef3c7;color:#92400e;padding:.2rem .55rem;border-radius:999px;font-size:.78rem;font-weight:650;">+${r.seconded}</span>`
+        : `<span class="text-muted">—</span>`}
+      </td>
+      <td>${r.totQ}</td>
+      <td>${r.totA}</td>
+      <td class="${r.totE>0?'text-success fw-bold':''}">${r.totE}</td>
+      <td class="${r.totD>0?'text-danger fw-bold':''}">${r.totD}</td>
+      <td>${r.totS}</td>
+    </tr>`).join('') || '<tr><td colspan="8" class="empty-state">لا توجد بيانات</td></tr>';
 }
 
 async function loadRptVisits() {
@@ -2280,7 +2626,6 @@ async function loadRptVisits() {
 // ═══════════════════════════════════════════════════════
 async function exportJSON() {
   try {
-    // جلب كل شيء بثلاثة طلبات بدل N×3 طلبات
     const [boot, allV] = await Promise.all([
       loadBootstrapData(),
       cacheGet('visits_all') ? Promise.resolve(cacheGet('visits_all'))
@@ -2289,26 +2634,74 @@ async function exportJSON() {
     const insts = boot?.institutes || cacheGet('institutes') || [];
     const allT  = boot?.teachers  || cacheGet('teachers_all') || [];
     const allC  = boot?.classes   || cacheGet('classes_all')  || [];
-    const blob = new Blob([JSON.stringify({ institutes: insts, teachers: allT, classes: allC, visits: allV||[], exported_at: new Date().toISOString() }, null, 2)], {type:'application/json'});
+
+    // ضمان وجود حقل secondment_institutes في كل معلم (مصفوفة فارغة بدلاً من undefined)
+    const teachersSafe = allT.map(t => ({
+      ...t,
+      secondment_institutes: Array.isArray(t.secondment_institutes) ? t.secondment_institutes : []
+    }));
+
+    // إحصاءات سريعة للتأكيد
+    const secondedCount = teachersSafe.filter(t => t.secondment_institutes.length > 0).length;
+
+    const payload = {
+      version: '2.1',
+      exported_at: new Date().toISOString(),
+      stats: {
+        institutes: insts.length,
+        teachers: teachersSafe.length,
+        teachers_with_secondment: secondedCount,
+        classes: allC.length,
+        visits: (allV||[]).length
+      },
+      institutes: insts,
+      teachers: teachersSafe,
+      classes: allC,
+      visits: allV || []
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'backup_matrouh_' + new Date().toISOString().slice(0,10) + '.json';
-    a.click(); URL.revokeObjectURL(url);
-    showAlert('تم تصدير البيانات بنجاح');
+    a.href = url;
+    a.download = 'backup_matrouh_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showAlert(`✅ تم تصدير البيانات — ${teachersSafe.length} معلم (${secondedCount} منهم لديهم انتداب)`, 'success');
   } catch(e) { showAlert('فشل التصدير: ' + e.message, 'danger'); }
 }
 
 async function importJSON() {
   const file = document.getElementById('import-file').files[0];
   if (!file) { showAlert('اختر ملف JSON أولاً', 'warning'); return; }
-  if (!confirm('سيُستبدل كل البيانات في Google Sheets بمحتوى الملف. هل أنت متأكد؟')) return;
+
+  let data;
   try {
     const text = await file.text();
-    const data = JSON.parse(text);
+    data = JSON.parse(text);
+  } catch(e) { showAlert('الملف غير صالح أو تالف: ' + e.message, 'danger'); return; }
+
+  // التحقق من الحقول الأساسية
+  if (!Array.isArray(data.institutes) || !Array.isArray(data.teachers) || !Array.isArray(data.classes)) {
+    showAlert('ملف النسخ الاحتياطي غير مكتمل — تأكد من صحة الملف', 'danger'); return;
+  }
+
+  // ضمان وجود secondment_institutes في كل معلم قبل الرفع
+  data.teachers = data.teachers.map(t => ({
+    ...t,
+    secondment_institutes: Array.isArray(t.secondment_institutes) ? t.secondment_institutes : []
+  }));
+
+  const secondedCount = data.teachers.filter(t => t.secondment_institutes.length > 0).length;
+  const summary = `${data.institutes.length} معهد — ${data.teachers.length} معلم (${secondedCount} منهم منتدب) — ${data.classes.length} فصل`;
+
+  if (!confirm(`سيُستبدل كل البيانات في Google Sheets بمحتوى الملف.\n\n${summary}\n\nهل أنت متأكد؟`)) return;
+
+  try {
     await callGAS('importAll', data);
-    cacheClear();       // استيراد كامل ← مسح كامل مبرر
+    cacheClear();
     _bootstrapDone = false;
-    showAlert('تم استيراد البيانات بنجاح. يرجى تحديث الصفحة.');
+    showAlert(`✅ تم الاستيراد بنجاح — ${summary}. يرجى تحديث الصفحة.`, 'success');
   } catch(e) { showAlert('فشل الاستيراد: ' + e.message, 'danger'); }
 }
 
